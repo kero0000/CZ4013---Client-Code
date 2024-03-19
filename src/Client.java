@@ -8,12 +8,13 @@ public class Client {
     private static final int SERVER_PORT = 3000; // Change this to the server's port
     private static final int FRESHNESS_INTERVAL = 5;
     private static final int CACHE_SIZE = 10; // Adjust cache size as needed
-    private static Map<String, CacheEntry> cache = new HashMap<>();
+    private static Map<CacheKey, CacheEntry> cache = new HashMap<>();
 
     public static void main(String[] args) {
         DatagramSocket socket = null;
         Scanner scanner = new Scanner(System.in);
         Request request = null;
+        int requestId = 1;
 
         try {
             while (true) {
@@ -39,7 +40,7 @@ public class Client {
                     int bytesToReadFrom = scanner.nextInt();
 
                     // Create request object
-                    request = new Request(operation, filename, 1, offset, bytesToReadFrom); // Example request
+                    request = new Request(operation, filename, requestId, offset, bytesToReadFrom); // Example request
                 }
 
                 else if (userInput.equals("2")){
@@ -54,7 +55,7 @@ public class Client {
                     String bytesToWrite = scanner.nextLine();
 
                     // Create request object
-                    request = new Request(operation, filename, 1, offset, bytesToWrite); // Example request
+                    request = new Request(operation, filename, requestId, offset, bytesToWrite); // Example request
                 }
 
                 else if (userInput.equals("3")){
@@ -67,15 +68,55 @@ public class Client {
                     scanner.nextLine();
 
                     // Create request object
-                    request = new Request(operation, filename, 1, interval); // Example request
+                    request = new Request(operation, filename, requestId, interval); // Example request
+                }
+
+                else if (userInput.equals("4")){
+
+                    int operation = 4;
+                    System.out.println("Enter list directory request filename: ");
+                    String filename = scanner.nextLine();
+
+                    // Create request object
+                    request = new Request(operation, filename, requestId); // Example request
+                }
+
+                else if (userInput.equals("5")){
+
+                    int operation = 5;
+                    System.out.println("Enter delete request filename: ");
+                    String filename = scanner.nextLine();
+                    System.out.println("Enter delete request offset: ");
+                    int offset = scanner.nextInt();
+                    System.out.println("Enter number of bytes to delete from: ");
+                    int bytesToDelete = scanner.nextInt();
+
+                    // Create request object
+                    request = new Request(operation, filename, requestId, offset, bytesToDelete, true); // Example request
+                }
+
+                else if (userInput.equals("6")){
+
+                    int operation = 3;
+                    System.out.println("Enter getAttri request filename: ");
+                    String filename = scanner.nextLine();
+                    System.out.println("Enter monitor interval: ");
+                    int interval = scanner.nextInt();
+                    scanner.nextLine();
+
+                    // Create request object
+                    request = new Request(operation, filename, requestId); // Example request
                 }
 
                 // Marshal request object
                 //assert request != null;
-                byte[] requestData = marshallRequest(request);
+                byte[] marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
+                if (marshalledRequestData==null){
+                    System.out.println(("JX fault"));
+                }
                 // Create UDP packet
-                DatagramPacket requestPacket = new DatagramPacket(requestData, requestData.length, serverAddress, SERVER_PORT);
+                DatagramPacket requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                 // Send request packet
                 socket.send(requestPacket);
@@ -90,6 +131,8 @@ public class Client {
 
                 // Process response
                 System.out.println("Response from server: " + response.getMessage());
+
+                requestId++;
             }
         } catch (Exception e) {
             e.printStackTrace();

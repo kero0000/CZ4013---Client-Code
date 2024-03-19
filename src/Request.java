@@ -6,6 +6,10 @@ public class Request {
     private int bytesToReadFrom;
     private String bytesToWrite;
     private int interval;
+
+    private int bytesToDelete;
+
+    private boolean removeFlag;
     public String getBytesToWrite() {
         return bytesToWrite;
     }
@@ -15,11 +19,20 @@ public class Request {
     }
 
     public Request(){}
+
+    // list directory
     public Request(int operation, String filename, int requestId){
         this.operation = operation;
         this.filename = filename;
         this.requestId = requestId;
     }
+    // getAttri
+    public Request(int operation, int requestId, String filename){
+        this.operation = operation;
+        this.filename = filename;
+        this.requestId = requestId;
+    }
+    // read
     public Request(int operation, String filename, int requestId, int offset, int bytesToReadFrom) {
         this.operation = operation;
         this.filename = filename;
@@ -27,6 +40,18 @@ public class Request {
         this.offset = offset;
         this.bytesToReadFrom = bytesToReadFrom;
     }
+
+    // delete
+    public Request(int operation, String filename, int requestId, int offset, int bytesToDelete, boolean removeFlag) {
+        this.operation = operation;
+        this.filename = filename;
+        this.requestId = requestId;
+        this.offset = offset;
+        this.bytesToDelete = bytesToDelete;
+        this.removeFlag = true;
+    }
+
+    //write
     public Request(int operation, String filename, int requestId, int offset, String bytesToWrite) {
         this.operation = operation;
         this.filename = filename;
@@ -35,6 +60,8 @@ public class Request {
         this.bytesToWrite = bytesToWrite;
     }
 
+
+    //monitor
     public Request(int operation, String filename, int requestId, int interval) {
         this.operation = operation;
         this.filename = filename;

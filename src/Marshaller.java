@@ -1,75 +1,107 @@
-import java.nio.ByteBuffer;
-
 public class Marshaller {
     static int BOUNDARY_SIZE = 4;
 
     /**
      * Marshalls a string into a ByteBuffer with padding.
      *
-     * @param buffer      The ByteBuffer to which the string and padding are to be
+     * @param buffer      The byte[] array to which a string and padding are to be
      *                    added.
-     * @param stringBytes The bytes of the string to be added to the buffer.
-     * @param paddingSize The size of the padding to be added after the string.
+     * @param index       The index to keep track of the position in the array.
+     * @param stringBytes The bytes of the string to be added.
+     * @param paddingSize The size of the padding to be added.
+     * @return The index.
      */
-    public static void marshallString(ByteBuffer buffer, byte[] stringBytes, int paddingSize) {
-        // byte[] stringBytes = str.getBytes(StandardCharsets.UTF_8);
-        // int paddingSize = calculatePadding(stringBytes.length, boundary);
+    public static int marshallString(byte[] buffer, int index, byte[] stringBytes, int paddingSize) {
 
-        buffer.putInt(stringBytes.length);
-        buffer.put(stringBytes);
+        // Big Endian byte order
+        for (int i = 3; i >= 0; i--) {
+            buffer[index++] = (byte) (stringBytes.length >>> (8 * i)); // Unsigned Shift right so the MSB will be read
+            // first
+        }
+
+        // System.arraycopy(stringBytes, 0, buffer, index, stringBytes.length);
+
+        for (int i = 0; i < stringBytes.length; i++) {
+            buffer[index++] = stringBytes[i];
+        }
 
         // Add padding to boundary for memory management
         for (int i = 0; i < paddingSize; i++) {
-            buffer.put((byte) 0);
+            buffer[index++] = 0;
         }
 
+        return index;
     }
 
     /**
-     * Marshalls an interger into a ByteBuffer.
+     * Marshalls an integer into a ByteBuffer with padding.
      *
-     * @param buffer The ByteBuffer to which the integer is to be added.
-     * @param value  The integer to be added to the buffer.
+     * @param buffer The byte[] array to which an integer is to be
+     *               added.
+     * @param index  The index to keep track of the position in the array.
+     * @param value  The bytes of the integer to be added.
+     * @return The index.
      */
-    public static void marshallInt(ByteBuffer buffer, int value) {
-        buffer.putInt(value);
+    public static int marshallInt(byte[] buffer, int index, int value) {
+        for (int i = 3; i >= 0; i--) {
+            buffer[index++] = (byte) (value >>> (8 * i));
+        }
+        return index;
     }
 
     /**
-     * Marshalls a long interger into a ByteBuffer.
+     * Marshalls a long integer into a ByteBuffer with padding.
      *
-     * @param buffer The ByteBuffer to which the long interger is to be added.
-     * @param value  The long integer to be added to the buffer.
+     * @param buffer The byte[] array to which a long integer is to be
+     *               added.
+     * @param index  The index to keep track of the position in the array.
+     * @param value  The bytes of the long integer to be added.
+     * @return The index.
      */
-    public static void marshallLong(ByteBuffer buffer, Long value) {
-        // buffer.putInt(Long.BYTES); // Include the length of the Long value
-        buffer.putLong(value);
-        // int paddingSize = calculatePadding(Long.BYTES, boundary);
-        // for (int i = 0; i < paddingSize; i++) {
-        // buffer.put((byte) 0);
-        // }
+    public static int marshallLong(byte[] buffer, int index, Long value) {
+        for (int i = 7; i >= 0; i--) {
+            buffer[index++] = (byte) (value >>> (8 * i));
+        }
+        return index;
+
     }
 
     /**
-     * Marshalls a float into a ByteBuffer.
+     * Marshalls a float into a ByteBuffer with padding.
      *
-     * @param buffer The ByteBuffer to which the float is to be added.
-     * @param value  The float to be added to the buffer.
+     * @param buffer The byte[] array to which a float is to be
+     *               added.
+     * @param index  The index to keep track of the position in the array.
+     * @param value  The bytes of the float to be added.
+     * @return The index.
      */
-    public static void marshallFloat(ByteBuffer buffer, Float value) {
+    public static int marshallFloat(byte[] buffer, int index, Float value) {
 
         int intBits = Float.floatToIntBits(value); // Convert the float to IEEE representation
-        buffer.putInt(intBits);
+        for (int i = 3; i >= 0; i--) {
+            buffer[index++] = (byte) (intBits >>> (8 * i));
+        }
+        return index;
     }
 
     /**
-     * Marshalls a short interger into a ByteBuffer.
+     * Marshalls a short integer into a ByteBuffer with padding.
      *
-     * @param buffer The ByteBuffer to which the short interger is to be added.
-     * @param value  The short integer to be added to the buffer.
+     * @param buffer The byte[] array to which a short integer is to be
+     *               added.
+     * @param index  The index to keep track of the position in the array.
+     * @param value  The bytes of the short integer to be added.
+     * @return The index.
      */
-    public static void marshallShort(ByteBuffer buffer, short value) {
-        buffer.putShort(value);
+    public static int marshallShort(byte[] buffer, int index, short value) {
+        for (int i = 1; i >= 0; i--) {
+            buffer[index++] = (byte) (value >>> (8 * i));
+        }
+        // Add padding to boundary for memory management
+        for (int i = 0; i < 2; i++) {
+            buffer[index++] = 0;
+        }
+        return index;
     }
 
     /**
@@ -81,6 +113,10 @@ public class Marshaller {
      */
     public static int calculatePadding(int length) {
         return (BOUNDARY_SIZE - (length % BOUNDARY_SIZE));
+    }
+
+    public static int calculatePadding(long length) {
+        return BOUNDARY_SIZE - (int) (length % BOUNDARY_SIZE);
     }
 
 }
