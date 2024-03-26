@@ -127,18 +127,31 @@ public class Client {
                 socket.send(requestPacket);
 
                 // Receive response from server
-                byte[] responseData = new byte[1024]; // Adjust buffer size as needed
-                DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length);
+                //byte[] responseData = new byte[128]; // Adjust buffer size as needed
+                byte[] buffer = new byte[1024];
+                DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
+
+                // timeout
                 socket.receive(responsePacket);
 
+                byte[] responseData = responsePacket.getData();
+                for (byte b: responseData){
+                    System.out.print(b + ",");
+                };
+                System.out.println(" ");
+
+
                 // Unmarshal response object
+                Reply response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
                 //Response response = unmarshallResponse(responsePacket.getData());
-
-                Response response = unmarshallResponse(responsePacket.getData());
-
+                //System.out.println("waiting for response");
 
                 // Process response
-                System.out.println("Response from server: " + response.getMessage());
+                System.out.println("Response from server: " + response.getRequestId());
+                System.out.println("Response from server: " + response.getStatus());
+                System.out.println("Response from server: " + response.getModifiedTime());
+                System.out.println("Response from server: " + response.getContent());
 
                 requestId++;
             }
@@ -151,11 +164,11 @@ public class Client {
         }
     }
 
-    private static Response unmarshallResponse(byte[] data) {
-        // Custom unmarshalling logic
-        String responseData = new String(data, StandardCharsets.UTF_8).trim();
-        return new Response(responseData);
-    }
+//    private static Response unmarshallResponse(byte[] data) {
+//        // Custom unmarshalling logic
+//        String responseData = new String(data, StandardCharsets.UTF_8).trim();
+//        return new Response(responseData);
+//    }
 
     private static String getCacheContent(String content, int offset, int bytesToRead) {
         // Check if the input indices are valid

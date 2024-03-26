@@ -7,6 +7,14 @@ public class Request {
     private String bytesToWrite;
     private int interval;
 
+    public int getBytesToDelete() {
+        return bytesToDelete;
+    }
+
+    public void setBytesToDelete(int bytesToDelete) {
+        this.bytesToDelete = bytesToDelete;
+    }
+
     private int bytesToDelete;
 
     private boolean removeFlag;

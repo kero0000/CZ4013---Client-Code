@@ -60,7 +60,7 @@ public class MarshallerCaller {
                 index = Marshaller.marshallInt(buffer, index, request.getOperation());
                 index = Marshaller.marshallString(buffer, index, stringBytes, paddingSizeFilename);
                 index = Marshaller.marshallInt(buffer, index, request.getOffset());
-                index = Marshaller.marshallInt(buffer, index, request.getBytesToReadFrom());
+                index = Marshaller.marshallInt(buffer, index, request.getBytesToDelete());
                 return buffer;
 
             case 2:
