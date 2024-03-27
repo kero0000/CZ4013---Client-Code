@@ -22,6 +22,7 @@ public class Client {
                 System.out.print("Enter request (or type 'quit' to exit): ");
                 String userInput = scanner.nextLine();
 
+
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
@@ -38,6 +39,7 @@ public class Client {
                     int offset = scanner.nextInt();
                     System.out.println("Enter number of bytes to read from: ");
                     int bytesToReadFrom = scanner.nextInt();
+                    scanner.nextLine();
 
                     // if file is already in cache
                     if (cache.containsKey(filename)) {
