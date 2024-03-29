@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -14,8 +15,10 @@ public class Client {
         DatagramSocket socket = null;
         Scanner scanner = new Scanner(System.in);
         Request request = null;
+        Reply response = null;
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
+        byte[] responseData = null;
         byte[] buffer = null;
         byte[] marshalledRequestData = null;
         int requestId = 1;
@@ -56,10 +59,53 @@ public class Client {
                             continue;
                         }
 
-                        // cacheEntry no longer valid,
+                        // cacheEntry no longer valid, send getAttri for lastModified at Server
                         else{
                             operation = 6;
                             request = new Request(operation, requestId, filename); // Example request
+
+                            marshalledRequestData = MarshallerCaller.marshallRequest(request);
+
+                            // Create UDP packet
+                            assert marshalledRequestData != null;
+                            requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
+
+                            // Send request packet
+                            socket.send(requestPacket);
+
+                            buffer = new byte[1024];
+                            responsePacket = new DatagramPacket(buffer, buffer.length);
+
+                            // Loop until data is received or 30 seconds have passed
+                            long startTime = System.currentTimeMillis();
+                            while (true) {
+                                // Calculate the remaining time until 30 seconds have passed
+                                long currentTime = System.currentTimeMillis();
+                                long elapsedTime = currentTime - startTime;
+                                long remainingTime = 30000 - elapsedTime;
+
+                                // If 30 seconds have passed, break out of the loop
+                                if (elapsedTime >= 30000) {
+                                    break;
+                                }
+
+                                // Set the timeout for the socket to the remaining time
+                                socket.setSoTimeout((int) remainingTime);
+
+                                // Wait for data with the remaining time as the timeout
+                                socket.receive(responsePacket);
+                                System.out.println("lastModified at server received!");
+                                break; // Data received, exit the loop
+                            }
+
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                            // Process response
+                            System.out.println("Response from server: " + response.getRequestId());
+                            System.out.println("Response from server: " + response.getStatus());
+                            System.out.println("Response from server: " + response.getModifiedTime());
+                            System.out.println("Response from server: " + response.getContent());
 
                         }
 
@@ -73,11 +119,9 @@ public class Client {
 
                     marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
-                    if (marshalledRequestData == null) {
-                        System.out.println(("JX fault"));
-                    }
                     // Create UDP packet
-                     requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
+                    assert marshalledRequestData != null;
+                    requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                     // Send request packet
                     socket.send(requestPacket);
@@ -87,6 +131,16 @@ public class Client {
 
                     // timeout
                     socket.receive(responsePacket);
+
+                    System.out.println("Received response from Server");
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Process response
+                    System.out.println("Response from server: " + response.getRequestId());
+                    System.out.println("Response from server: " + response.getStatus());
+                    System.out.println("Response from server: " + response.getModifiedTime());
+                    System.out.println("Response from server: " + response.getContent());
 
 
                 } else if (userInput.equals("2")) {
@@ -105,11 +159,9 @@ public class Client {
 
                      marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
-                    if (marshalledRequestData == null) {
-                        System.out.println(("JX fault"));
-                    }
                     // Create UDP packet
-                     requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
+                    assert marshalledRequestData != null;
+                    requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                     // Send request packet
                     socket.send(requestPacket);
@@ -119,6 +171,16 @@ public class Client {
 
                     // timeout
                     socket.receive(responsePacket);
+
+                    System.out.println("Received response from Server");
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Process response
+                    System.out.println("Response from server: " + response.getRequestId());
+                    System.out.println("Response from server: " + response.getStatus());
+                    System.out.println("Response from server: " + response.getModifiedTime());
+                    System.out.println("Response from server: " + response.getContent());
 
 
                 } else if (userInput.equals("3")) {
@@ -135,11 +197,9 @@ public class Client {
 
                     marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
-                    if (marshalledRequestData == null) {
-                        System.out.println(("JX fault"));
-                    }
                     // Create UDP packet
-                     requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
+                    assert marshalledRequestData != null;
+                    requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                     // Send request packet
                     socket.send(requestPacket);
@@ -147,8 +207,44 @@ public class Client {
                      buffer = new byte[1024];
                      responsePacket = new DatagramPacket(buffer, buffer.length);
 
-                    // timeout
-                    socket.receive(responsePacket);
+                    // Loop until data is received or 30 seconds have passed
+                    long startTime = System.currentTimeMillis();
+                    while (true) {
+                        // Calculate the remaining time until 30 seconds have passed
+                        long currentTime = System.currentTimeMillis();
+                        long elapsedTime = currentTime - startTime;
+                        long remainingTime = 30000 - elapsedTime;
+
+                        // If 30 seconds have passed, break out of the loop
+                        if (elapsedTime >= 30000) {
+                            break;
+                        }
+
+                        // Set the timeout for the socket to the remaining time
+                        socket.setSoTimeout((int) remainingTime);
+
+                        try{
+                            // Wait for data with the remaining time as the timeout
+                            socket.receive(responsePacket);
+                            System.out.println("lastModified at server received!");
+                            break; // Data received, exit the loop
+                        } catch (IOException e) {
+                            System.err.println("Waiting for data...");
+                        }
+                    }
+
+                    // if no updates, continue to next request
+                    if (response == null){
+                        continue;
+                    }
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Process response
+                    System.out.println("Response from server: " + response.getRequestId());
+                    System.out.println("Response from server: " + response.getStatus());
+                    System.out.println("Response from server: " + response.getModifiedTime());
+                    System.out.println("Response from server: " + response.getContent());
 
                 } else if (userInput.equals("4")) {
 
@@ -163,10 +259,8 @@ public class Client {
                     //assert request != null;
                     marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
-                    if (marshalledRequestData == null) {
-                        System.out.println(("JX fault"));
-                    }
                     // Create UDP packet
+                    assert marshalledRequestData != null;
                     requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                     // Send request packet
@@ -177,6 +271,16 @@ public class Client {
 
                     // timeout
                     socket.receive(responsePacket);
+
+                    System.out.println("Received response from Server");
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Process response
+                    System.out.println("Response from server: " + response.getRequestId());
+                    System.out.println("Response from server: " + response.getStatus());
+                    System.out.println("Response from server: " + response.getModifiedTime());
+                    System.out.println("Response from server: " + response.getContent());
 
                 } else if (userInput.equals("5")) {
 
@@ -193,10 +297,8 @@ public class Client {
 
                      marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
-                    if (marshalledRequestData == null) {
-                        System.out.println(("JX fault"));
-                    }
                     // Create UDP packet
+                    assert marshalledRequestData != null;
                     requestPacket = new DatagramPacket(marshalledRequestData, marshalledRequestData.length, serverAddress, SERVER_PORT);
 
                     // Send request packet
@@ -207,27 +309,17 @@ public class Client {
 
                     // timeout
                     socket.receive(responsePacket);
+
+                    System.out.println("Received response from Server");
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Process response
+                    System.out.println("Response from server: " + response.getRequestId());
+                    System.out.println("Response from server: " + response.getStatus());
+                    System.out.println("Response from server: " + response.getModifiedTime());
+                    System.out.println("Response from server: " + response.getContent());
                 }
-
-
-                byte[] responseData = responsePacket.getData();
-                for (byte b: responseData){
-                    System.out.print(b + ",");
-                };
-                System.out.println(" ");
-
-
-                // Unmarshal response object
-                Reply response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
-
-                //Response response = unmarshallResponse(responsePacket.getData());
-                //System.out.println("waiting for response");
-
-                // Process response
-                System.out.println("Response from server: " + response.getRequestId());
-                System.out.println("Response from server: " + response.getStatus());
-                System.out.println("Response from server: " + response.getModifiedTime());
-                System.out.println("Response from server: " + response.getContent());
 
                 requestId++;
             }
