@@ -92,7 +92,7 @@ public class Client {
                             }
                             cache.remove(filename);
                             // Invaldiate cache entry and make a new request
-                            System.out.println("Cache entry is invalid. Please make a new request.");
+                            System.out.println("Cache entry is invalid. Sending new request.");
 
                             // Process response
                             System.out.println("Response from server: " + response.getRequestId());
@@ -104,11 +104,9 @@ public class Client {
 
 
                     }
-                    else {
-                        // Create request object
-                        request = new Request(operation, filename, requestId, offset, bytesToReadFrom); // Example request
 
-                    }
+                    // Create request object
+                    request = new Request(operation, filename, requestId, offset, bytesToReadFrom); // Example request
 
                     marshalledRequestData = MarshallerCaller.marshallRequest(request);
 
@@ -200,16 +198,16 @@ public class Client {
                      buffer = new byte[1024];
                      responsePacket = new DatagramPacket(buffer, buffer.length);
 
-                    // Loop until data is received or 30 seconds have passed
+                    // Loop until data is received or interval have passed
                     long startTime = System.currentTimeMillis();
                     while (true) {
-                        // Calculate the remaining time until 30 seconds have passed
+                        // Calculate the remaining time until interval have passed
                         long currentTime = System.currentTimeMillis();
                         long elapsedTime = currentTime - startTime;
-                        long remainingTime = 30000 - elapsedTime;
+                        long remainingTime = interval - elapsedTime;
 
                         // If 30 seconds have passed, break out of the loop
-                        if (elapsedTime >= 30000) {
+                        if (elapsedTime >= interval) {
                             break;
                         }
 
