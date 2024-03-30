@@ -17,6 +17,9 @@ public class Client {
         Reply response = null;
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
+        int t1 = (int) System.currentTimeMillis();
+        //CacheEntry example = new CacheEntry("helloyyyyyyy", t1, t1-20000);
+        //cache.put("txt", example);
         byte[] responseData = null;
         byte[] buffer = null;
         byte[] marshalledRequestData = null;
@@ -51,8 +54,10 @@ public class Client {
 
                     // if file is already in cache
                     if (cache.containsKey(filename)) {
+                        System.out.println("Checking if file already cached...");
                         // cache validity check
                         if (cache.get(filename).validityCheck()){
+                            System.out.println("Cached file is still valid!");
                             String content = cache.get(filename).getContent();
                             System.out.println(getCacheContent(content, offset, bytesToReadFrom));
                             continue;
@@ -60,6 +65,7 @@ public class Client {
 
                         // cacheEntry no longer valid, send getAttri for lastModified at Server
                         else{
+                            System.out.println("Cached file invalid, requesting for last modified from server...");
                             operation = 6;
                             request = new Request(operation, requestId, filename); // Example request
 
@@ -92,13 +98,7 @@ public class Client {
                             }
                             cache.remove(filename);
                             // Invaldiate cache entry and make a new request
-                            System.out.println("Cache entry is invalid. Sending new request.");
-
-                            // Process response
-                            System.out.println("Response from server: " + response.getRequestId());
-                            System.out.println("Response from server: " + response.getStatus());
-                            System.out.println("Response from server: " + response.getModifiedTime());
-                            System.out.println("Response from server: " + response.getContent());
+                            System.out.println("Cache entry is invalid. Sending new request for file content.");
 
                         }
 
@@ -127,12 +127,12 @@ public class Client {
                     // Unmarshal response object
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Process response
-                    System.out.println("Response from server: " + response.getRequestId());
-                    System.out.println("Response from server: " + response.getStatus());
-                    System.out.println("Response from server: " + response.getModifiedTime());
-                    System.out.println("Response from server: " + response.getContent());
+                    // cache read content
+                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), response.getModifiedTime());
 
+                    cache.put(response.getContent(), entry);
+
+                    System.out.println("Successfully cached file!");
 
                 } else if (userInput.equals("2")) {
 

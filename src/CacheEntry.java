@@ -3,6 +3,12 @@ import java.sql.Timestamp;
 public class CacheEntry {
     private static int FRESHNESS = 30000;
     public CacheEntry(){}
+
+    public CacheEntry(String content, int lastModified, int lastValidated){
+        this.lastModified = lastModified;
+        this.lastValidated = lastValidated;
+        this.content = content;
+    }
     public CacheEntry(String content){
         this.content = content;
     }
@@ -37,7 +43,8 @@ public class CacheEntry {
     private String content;
 
     public boolean validityCheck(){
-        if (System.currentTimeMillis()-this.lastValidated < FRESHNESS){
+        int current = (int)System.currentTimeMillis();
+        if (current-this.lastValidated < FRESHNESS){
             return true;
         }
         return false;
