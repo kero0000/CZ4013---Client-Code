@@ -16,6 +16,16 @@ public class CacheEntry {
     }
 
     private int lastValidated;
+
+    public int getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(int lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    private int lastModified;
     public String getContent() {
         return content;
     }
@@ -28,6 +38,14 @@ public class CacheEntry {
 
     public boolean validityCheck(){
         if (System.currentTimeMillis()-this.lastValidated < FRESHNESS){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean validityModifiedCheck(int lastModified){
+        if (this.lastModified==lastModified){
+            this.lastValidated = (int) System.currentTimeMillis();
             return true;
         }
         return false;

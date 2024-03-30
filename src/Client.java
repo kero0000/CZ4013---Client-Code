@@ -7,7 +7,6 @@ import java.util.Scanner;
 
 public class Client {
     private static final int SERVER_PORT = 8080; // Change this to the server's port
-    private static final int FRESHNESS_INTERVAL = 5;
     private static final int CACHE_SIZE = 10; // Adjust cache size as needed
     private static final Map<String, CacheEntry> cache = new HashMap<>();
 
@@ -76,30 +75,24 @@ public class Client {
                             buffer = new byte[1024];
                             responsePacket = new DatagramPacket(buffer, buffer.length);
 
-                            // Loop until data is received or 30 seconds have passed
-                            long startTime = System.currentTimeMillis();
-                            while (true) {
-                                // Calculate the remaining time until 30 seconds have passed
-                                long currentTime = System.currentTimeMillis();
-                                long elapsedTime = currentTime - startTime;
-                                long remainingTime = 30000 - elapsedTime;
+                            // timeout
+                            socket.receive(responsePacket);
 
-                                // If 30 seconds have passed, break out of the loop
-                                if (elapsedTime >= 30000) {
-                                    break;
-                                }
-
-                                // Set the timeout for the socket to the remaining time
-                                socket.setSoTimeout((int) remainingTime);
-
-                                // Wait for data with the remaining time as the timeout
-                                socket.receive(responsePacket);
-                                System.out.println("lastModified at server received!");
-                                break; // Data received, exit the loop
-                            }
-
+                            System.out.println("Received response from Server");
                             // Unmarshal response object
                             response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                            int lastModifiedServer = response.getModifiedTime();
+
+                            // if lastModified matches
+                            if (cache.get(filename).validityModifiedCheck(lastModifiedServer)){
+                                String content = cache.get(filename).getContent();
+                                System.out.println(getCacheContent(content, offset, bytesToReadFrom));
+                                continue;
+                            }
+                            cache.remove(filename);
+                            // Invaldiate cache entry and make a new request
+                            System.out.println("Cache entry is invalid. Please make a new request.");
 
                             // Process response
                             System.out.println("Response from server: " + response.getRequestId());
@@ -235,6 +228,7 @@ public class Client {
 
                     // if no updates, continue to next request
                     if (response == null){
+                        System.out.println("Did not receive updates from server! Proceeding to next request.");
                         continue;
                     }
                     // Unmarshal response object
