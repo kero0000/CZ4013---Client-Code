@@ -3,6 +3,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 public class Client {
@@ -15,6 +16,8 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
         Request request = null;
         Reply response = null;
+        Random random = new Random();
+        boolean randomBoolean = false;
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
         int t1 = (int) System.currentTimeMillis();
@@ -27,8 +30,33 @@ public class Client {
         int operation = 0;
         int interval = 0;
 
+
         try {
             while (true) {
+
+                // duplicate previous request
+                randomBoolean = random.nextBoolean();
+                if (requestId>1 && randomBoolean){
+                    // Send same request packet as before
+                    socket.send(requestPacket);
+
+                    buffer = new byte[1024];
+                    responsePacket = new DatagramPacket(buffer, buffer.length);
+
+                    // timeout
+                    socket.receive(responsePacket);
+
+                    System.out.println("Received response from Server");
+                    // Unmarshal response object
+                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // cache read content
+                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), response.getModifiedTime());
+
+                    cache.put(response.getContent(), entry);
+
+                    System.out.println("Successfully executed duplicate requests !");
+                }
 
                 System.out.print("Enter request (or type 'quit' to exit): ");
                 String userInput = scanner.nextLine();
@@ -168,10 +196,10 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // Process response
-                    System.out.println("Response from server: " + response.getRequestId());
-                    System.out.println("Response from server: " + response.getStatus());
-                    System.out.println("Response from server: " + response.getModifiedTime());
-                    System.out.println("Response from server: " + response.getContent());
+                    System.out.println("RequestId: " + response.getRequestId());
+                    System.out.println("Status" + response.getStatus());
+                    System.out.println("Modified time: " + response.getModifiedTime());
+                    System.out.println("Content: " + response.getContent());
 
 
                 } else if (userInput.equals("3")) {
@@ -233,10 +261,10 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // Process response
-                    System.out.println("Response from server: " + response.getRequestId());
-                    System.out.println("Response from server: " + response.getStatus());
-                    System.out.println("Response from server: " + response.getModifiedTime());
-                    System.out.println("Response from server: " + response.getContent());
+                    System.out.println("RequestId: " + response.getRequestId());
+                    System.out.println("Status" + response.getStatus());
+                    System.out.println("Modified time: " + response.getModifiedTime());
+                    System.out.println("Content: " + response.getContent());
 
                 } else if (userInput.equals("4")) {
 
@@ -269,10 +297,10 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // Process response
-                    System.out.println("Response from server: " + response.getRequestId());
-                    System.out.println("Response from server: " + response.getStatus());
-                    System.out.println("Response from server: " + response.getModifiedTime());
-                    System.out.println("Response from server: " + response.getContent());
+                    System.out.println("RequestId: " + response.getRequestId());
+                    System.out.println("Status" + response.getStatus());
+                    System.out.println("Modified time: " + response.getModifiedTime());
+                    System.out.println("Content: " + response.getContent());
 
                 } else if (userInput.equals("5")) {
 
@@ -307,10 +335,10 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // Process response
-                    System.out.println("Response from server: " + response.getRequestId());
-                    System.out.println("Response from server: " + response.getStatus());
-                    System.out.println("Response from server: " + response.getModifiedTime());
-                    System.out.println("Response from server: " + response.getContent());
+                    System.out.println("requestId: " + response.getRequestId());
+                    System.out.println("Status: " + response.getStatus());
+                    System.out.println("Modified time: " + response.getModifiedTime());
+                    System.out.println("Content: " + response.getContent());
                 }
 
                 requestId++;
@@ -323,12 +351,6 @@ public class Client {
             }
         }
     }
-
-//    private static Response unmarshallResponse(byte[] data) {
-//        // Custom unmarshalling logic
-//        String responseData = new String(data, StandardCharsets.UTF_8).trim();
-//        return new Response(responseData);
-//    }
 
     private static String getCacheContent(String content, int offset, int bytesToRead) {
         // Check if the input indices are valid
