@@ -21,8 +21,8 @@ public class Client {
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
         int t1 = (int) System.currentTimeMillis();
-        //CacheEntry example = new CacheEntry("helloyyyyyyy", t1, t1-20000);
-        //cache.put("txt", example);
+        CacheEntry example = new CacheEntry("helloyyyyyyy", t1, t1-20000);
+        cache.put("file.txt", example);
         byte[] responseData = null;
         byte[] buffer = null;
         byte[] marshalledRequestData = null;
@@ -37,6 +37,7 @@ public class Client {
                 // duplicate previous request
                 randomBoolean = random.nextBoolean();
                 if (requestId>1 && randomBoolean){
+                    System.out.println("Testing Duplicate Requests...");
                     // Send same request packet as before
                     socket.send(requestPacket);
 
@@ -156,9 +157,10 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // cache read content
-                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), response.getModifiedTime());
+                    int currentTime = (int) System.currentTimeMillis();
+                    CacheEntry entry = new CacheEntry(response.getContent(), currentTime, response.getModifiedTime());
 
-                    cache.put(response.getContent(), entry);
+                    cache.put(filename, entry);
 
                     System.out.println("Successfully cached file!");
 
