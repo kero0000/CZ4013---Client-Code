@@ -21,14 +21,15 @@ public class Client {
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
         int t1 = (int) System.currentTimeMillis();
-        CacheEntry example = new CacheEntry("helloyyyyyyy", t1, t1-20000);
-        cache.put("file.txt", example);
+        //CacheEntry example = new CacheEntry("helloyyyyyyy", t1, t1-20000);
+        //cache.put("file.txt", example);
         byte[] responseData = null;
         byte[] buffer = null;
         byte[] marshalledRequestData = null;
         int requestId = 1;
         int operation = 0;
         int interval = 0;
+        int currentTime;
 
 
         try {
@@ -36,6 +37,7 @@ public class Client {
 
                 // duplicate previous request
                 randomBoolean = random.nextBoolean();
+                currentTime = (int) System.currentTimeMillis();
                 if (requestId>1 && randomBoolean){
                     System.out.println("Testing Duplicate Requests...");
                     // Send same request packet as before
@@ -52,7 +54,7 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // cache read content
-                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), response.getModifiedTime());
+                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
                     cache.put(response.getContent(), entry);
 
@@ -157,8 +159,7 @@ public class Client {
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                     // cache read content
-                    int currentTime = (int) System.currentTimeMillis();
-                    CacheEntry entry = new CacheEntry(response.getContent(), currentTime, response.getModifiedTime());
+                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
                     cache.put(filename, entry);
 
@@ -232,7 +233,7 @@ public class Client {
                     long startTime = System.currentTimeMillis();
                     while (true) {
                         // Calculate the remaining time until interval have passed
-                        long currentTime = System.currentTimeMillis();
+                        currentTime = (int)System.currentTimeMillis();
                         long elapsedTime = currentTime - startTime;
                         long remainingTime = interval - elapsedTime;
 
