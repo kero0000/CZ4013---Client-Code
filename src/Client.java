@@ -90,7 +90,7 @@ public class Client {
                         if (cache.get(filename).validityCheck()){
                             System.out.println("Cached file is still valid!");
                             String content = cache.get(filename).getContent();
-                            System.out.println(getCacheContent(content, offset, bytesToReadFrom));
+                            System.out.println("Requested read content: " +readFileContent(content, offset, bytesToReadFrom));
                             continue;
                         }
 
@@ -124,7 +124,7 @@ public class Client {
                             // if lastModified matches
                             if (cache.get(filename).validityModifiedCheck(lastModifiedServer)){
                                 String content = cache.get(filename).getContent();
-                                System.out.println(getCacheContent(content, offset, bytesToReadFrom));
+                                System.out.println(readFileContent(content, offset, bytesToReadFrom));
                                 continue;
                             }
                             cache.remove(filename);
@@ -132,7 +132,6 @@ public class Client {
                             System.out.println("Cache entry is invalid. Sending new request for file content.");
 
                         }
-
 
                     }
 
@@ -157,6 +156,9 @@ public class Client {
                     System.out.println("Received response from Server");
                     // Unmarshal response object
                     response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                    // Read the file content
+                    System.out.println("Requested Read content: "+ readFileContent(response.getContent(), offset, bytesToReadFrom));
 
                     // cache read content
                     CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
@@ -248,8 +250,24 @@ public class Client {
                         try{
                             // Wait for data with the remaining time as the timeout
                             socket.receive(responsePacket);
-                            System.out.println("lastModified at server received!");
-                            break; // Data received, exit the loop
+                            System.out.println("Received updates from Server!");
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+
+                            // Process response
+                            System.out.println("RequestId: " + response.getRequestId());
+                            System.out.println("Status" + response.getStatus());
+                            System.out.println("Modified time: " + response.getModifiedTime());
+                            System.out.println("Content: " + response.getContent());
+
+                            // Assume that the updated file is already in cache, Update cache
+                            cache.remove(filename);
+                            CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+
+                            cache.put(filename, entry);
+
+                            System.out.println("Successfully updated "+ filename);
+
                         } catch (IOException e) {
                             System.err.println("Waiting for data...");
                         }
@@ -260,14 +278,7 @@ public class Client {
                         System.out.println("Did not receive updates from server! Proceeding to next request.");
                         continue;
                     }
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Process response
-                    System.out.println("RequestId: " + response.getRequestId());
-                    System.out.println("Status" + response.getStatus());
-                    System.out.println("Modified time: " + response.getModifiedTime());
-                    System.out.println("Content: " + response.getContent());
 
                 } else if (userInput.equals("4")) {
 
@@ -355,13 +366,13 @@ public class Client {
         }
     }
 
-    private static String getCacheContent(String content, int offset, int bytesToRead) {
+    private static String readFileContent(String content, int offset, int bytesToRead) {
         // Check if the input indices are valid
         if (offset < 0 || bytesToRead >= content.length() || offset > bytesToRead) {
             return ""; // Return an empty string if indices are invalid
         }
 
         // Return the substring from position i to position j (inclusive)
-        return content.substring(offset, bytesToRead + 1);
+        return content.substring(offset, bytesToRead);
     }
 }
