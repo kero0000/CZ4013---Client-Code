@@ -76,7 +76,6 @@ public class Client {
                     }
 //                    System.out.print("Successfully executed duplicate requests !");
                 }
-                randomBoolean = random.nextBoolean();
 
                 System.out.print("Enter request (or type 'quit' to exit): ");
                 userInput = scanner.nextLine();
@@ -85,7 +84,7 @@ public class Client {
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
-                InetAddress serverAddress = InetAddress.getByName("10.91.230.147"); // Change this to the server's IP address
+                InetAddress serverAddress = InetAddress.getByName("10.91.253.40"); // Change this to the server's IP address
                 socket = new DatagramSocket();
 
 
