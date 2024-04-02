@@ -42,7 +42,7 @@ public class Client {
                 // duplicate previous request
                 currentTime = (int) System.currentTimeMillis();
 
-                if (requestId > 1 && randomBoolean && userInput.equals("1") || userInput.equals("2") || userInput.equals("3") || userInput.equals("4") || userInput.equals("5")){
+                if (requestId > 1 && randomBoolean && request.getOperation() >= 1 && request.getOperation() <= 5){
                     System.out.println("Request timeout, sending the request again.");
                     // Send same request packet as before
                     socket.send(requestPacket);
@@ -182,7 +182,7 @@ public class Client {
                         if (!randomBoolean) {
                             socket.receive(responsePacket);
 
-                            System.out.println("Received response from Server: ");
+                            System.out.println("Received response from Server");
                             // Unmarshal response object
                             response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
@@ -229,7 +229,7 @@ public class Client {
                     // timeout
                     long startTime = System.currentTimeMillis();
                     while ((System.currentTimeMillis() - startTime) < 5000) {
-                        if (randomBoolean) {
+                        if (!randomBoolean) {
                             socket.receive(responsePacket);
 
                             System.out.println("Received response from Server");
@@ -284,7 +284,7 @@ public class Client {
                         }
 
                         // Set the timeout for the socket to the remaining time
-                        socket.setSoTimeout((int) interval);
+                        socket.setSoTimeout((int) remainingTime);
 
                         try{
                             // Wait for data with the remaining time as the timeout
@@ -308,7 +308,7 @@ public class Client {
 
                             System.out.println("Successfully updated "+ filename);
 
-                        } catch (IOException e) {
+                        } catch (SocketTimeoutException e) {
                             System.err.println("Monitoring ends!");
                             randomBoolean = false;
                             break;
@@ -349,7 +349,7 @@ public class Client {
                     // timeout
                     long startTime = System.currentTimeMillis();
                     while ((System.currentTimeMillis() - startTime) < 5000) {
-                        if (randomBoolean) {
+                        if (!randomBoolean) {
                             socket.receive(responsePacket);
 
                             System.out.println("Received response from Server");
@@ -392,7 +392,7 @@ public class Client {
                     // timeout
                     long startTime = System.currentTimeMillis();
                     while ((System.currentTimeMillis() - startTime) < 5000) {
-                        if (randomBoolean) {
+                        if (!randomBoolean) {
                             socket.receive(responsePacket);
 
                             System.out.println("Received response from Server");
