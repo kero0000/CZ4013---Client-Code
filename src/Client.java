@@ -18,7 +18,7 @@ public class Client {
         Request request = null;
         Reply response = null;
         Random random = new Random();
-        boolean randomBoolean = false;
+        boolean isResend = false;
         DatagramPacket requestPacket = null;
         DatagramPacket responsePacket = null;
         int t1 = (int) System.currentTimeMillis();
@@ -43,7 +43,7 @@ public class Client {
                 // duplicate previous request
                 currentTime = (int) System.currentTimeMillis();
 
-                if (requestId > 1 && randomBoolean && request.getOperation() >= 1 && request.getOperation() <= 5){
+                if (requestId > 1 && isResend && request.getOperation() >= 1 && request.getOperation() <= 5){
                     System.out.println("Request timeout, sending the request again.");
                     // Send same request packet as before
                     socket.send(requestPacket);
@@ -66,7 +66,7 @@ public class Client {
                             if (response.getStatus()==1){
                                 System.out.println("Content: " +  readFileContent(response.getContent(), offset, bytesToReadFrom));
                                 // cache read content
-                                cache.remove(filename);
+                                // cache.remove(filename);
                                 CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
                                 cache.put(filename, entry);
@@ -92,7 +92,6 @@ public class Client {
                             if (response.getStatus()==1){
                                 // cache read content
                                 cache.remove(filename);
-                                System.out.println(response.getContent());
                                 CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
                                 cache.put(filename, entry);
@@ -105,7 +104,7 @@ public class Client {
 
                         }
 
-                        randomBoolean = false;
+                        isResend = false;
 
                     }
                     catch (Exception e){
@@ -113,7 +112,7 @@ public class Client {
                     }
 //                    System.out.print("Successfully executed duplicate requests !");
                 }
-                randomBoolean = true;
+                isResend = false;
                 System.out.print("Enter request (or type 'quit' to exit): ");
                 userInput = scanner.nextLine();
 
@@ -121,7 +120,7 @@ public class Client {
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
-                InetAddress serverAddress = InetAddress.getByName("10.91.253.40"); // Change this to the server's IP address
+                InetAddress serverAddress = InetAddress.getByName("127.0.0.1"); // Change this to the server's IP address
                 socket = new DatagramSocket();
 
 
@@ -146,6 +145,7 @@ public class Client {
                             System.out.println("Cached file is still valid!");
                             String content = cache.get(filename).getContent();
                             System.out.println("Content: " + readFileContent(content, offset, bytesToReadFrom));
+                            isResend = false;
                             continue;
                         }
 
@@ -181,6 +181,7 @@ public class Client {
                             if (cache.get(filename).validityModifiedCheck(lastModifiedServer)) {
                                 String content = cache.get(filename).getContent();
                                 System.out.println("Content from cache: " + readFileContent(content, offset, bytesToReadFrom));
+                                isResend = false;
                                 continue;
                             }
                             cache.remove(filename);
@@ -211,34 +212,37 @@ public class Client {
 
                     socket.setSoTimeout((int) 5000);
 
-
-                    try {
-                        socket.receive(responsePacket);
-
-                        if (!randomBoolean) {
-
-                            System.out.println("Received response from Server");
-                            // Unmarshal response object
-                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
-                            if (response.getStatus() == 1) {
-                                // Read the file content
-                                System.out.println("Requested Read content: " + readFileContent(response.getContent(), offset, bytesToReadFrom));
-
-                                // cache read content
-                                CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
-
-                                cache.put(filename, entry);
-
-                                System.out.println("Successfully cached file!");
-                            } else {
-                                System.out.println(response.getContent());
+                    while(true){
+                        try {
+                            socket.receive(responsePacket);
+    
+                            if (!isResend) {
+    
+                                System.out.println("Received response from Server");
+                                // Unmarshal response object
+                                response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                                if (response.getStatus() == 1) {
+                                    // Read the file content
+                                    System.out.println("Requested Read content: " + readFileContent(response.getContent(), offset, bytesToReadFrom));
+    
+                                    // cache read content
+                                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+    
+                                    cache.put(filename, entry);
+    
+                                    System.out.println("Successfully cached file!");
+                                } else {
+                                    System.out.println(response.getContent());
+                                }
+    
+                                break;
                             }
-
+                        }catch(Exception e){
+                            isResend = true;
                             break;
                         }
-                    }catch(Exception e){
-                        break;
                     }
+
 
 
 
@@ -270,34 +274,36 @@ public class Client {
 
                     socket.setSoTimeout((int) 5000);
 
+                    while(true){
+                        try {
+                            socket.receive(responsePacket);
+    
+                            if (!isResend) {
+    
+                                System.out.println("Received response from Server");
+                                // Unmarshal response object
+                                response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+    
+                                if (response.getStatus() == 1) {
 
-                    try {
-                        socket.receive(responsePacket);
-
-                        if (!randomBoolean) {
-
-                            System.out.println("Received response from Server");
-                            // Unmarshal response object
-                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
-
-                            if (response.getStatus() == 1) {
-                                // Read the file content
-                                System.out.println("Content: " + response.getContent());
-
-                                // cache read content
-                                cache.remove(filename);
-                                CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
-
-                                cache.put(filename, entry);
-
-                                System.out.println("Successfully cached file!");
-                            } else {
-                                System.out.println(response.getContent());
+                                    // cache read content
+                                    cache.remove(filename);
+                                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+    
+                                    cache.put(filename, entry);
+    
+                                    System.out.println("Successfully cached file!");
+                                } else {
+                                    System.out.println(response.getContent());
+                                }
+                                break;
                             }
+                        }catch(Exception e){
+                            isResend = true;
                             break;
+
                         }
-                    }catch(Exception e){
-                        break;
+    
                     }
 
 
@@ -344,7 +350,7 @@ public class Client {
 
                         try{
                             // Wait for data with the remaining time as the timeout
-                            System.out.println("Receiving Updates");
+                            System.out.println("Receiving Updates...");
                             socket.receive(responsePacket);
                             System.out.println("Received updates from Server!");
                             // Unmarshal response object
@@ -368,15 +374,15 @@ public class Client {
                                 System.out.println("Successfully updated "+ filename);                            }
                             else{
                                 System.out.println(response.getContent());
-                                randomBoolean = false;
+                                isResend = false;
                                 break;
                             }
 
 
 
                         } catch (SocketTimeoutException e) {
-                            System.err.println("Monitoring ends!");
-                            randomBoolean = false;
+                            System.err.println("Monitoring Ended!");
+                            isResend = false;
                             break;
                         }
 
@@ -384,7 +390,7 @@ public class Client {
                     // if no updates, continue to next request
                     if (response == null){
                         System.out.println("Did not receive updates from server! Proceeding to next request.");
-                        randomBoolean = false;
+                        isResend = false;
                         continue;
                     }
 
@@ -415,29 +421,32 @@ public class Client {
 
                     // Set the timeout for the socket to the remaining time
                     socket.setSoTimeout((int) 5000);
-
-                    try {
-                        socket.receive(responsePacket);
-
-                        if (!randomBoolean) {
-
-                            System.out.println("Received response from Server");
-                            // Unmarshal response object
-                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
-
-
-                            if (response.getStatus() == 1) {
-                                // Read the file content
-                                System.out.println("Content: " + response.getContent());
-
-                            } else {
-                                System.out.println(response.getContent());
+                    while(true){
+                        try {
+                            socket.receive(responsePacket);
+    
+                            if (!isResend) {
+    
+                                System.out.println("Received response from Server");
+                                // Unmarshal response object
+                                response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+    
+    
+                                if (response.getStatus() == 1) {
+                                    // Read the file content
+                                    System.out.println("Content: " + response.getContent());
+    
+                                } else {
+                                    System.out.println(response.getContent());
+                                }
+                                break;
                             }
-                            break;
+                        } catch (Exception e){
+                            isResend = true;
+                            break;                       
                         }
-                    } catch (Exception e){
-                        break;
                     }
+
 
 
                 } else if (userInput.equals("5")) {
@@ -467,34 +476,35 @@ public class Client {
                      responsePacket = new DatagramPacket(buffer, buffer.length);
                     socket.setSoTimeout((int) 5000);
 
-
-                    try {
-                        socket.receive(responsePacket);
-
-                        if (!randomBoolean) {
-
-                            System.out.println("Received response from Server");
-                            // Unmarshal response object
-                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
-
-                            if (response.getStatus() == 1) {
-
-                                // cache read content
-                                cache.remove(filename);
-                                CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
-
-                                cache.put(filename, entry);
-
-                                System.out.println("Successfully cached file!");
-                            } else {
-                                System.out.println(response.getContent());
+                    while(true){
+                        try {
+                            socket.receive(responsePacket);
+    
+                            if (!isResend) {
+    
+                                System.out.println("Received response from Server");
+                                // Unmarshal response object
+                                response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+    
+                                if (response.getStatus() == 1) {
+    
+                                    // cache read content
+                                    cache.remove(filename);
+                                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+    
+                                    cache.put(filename, entry);
+    
+                                    System.out.println("Successfully cached file!");
+                                } else {
+                                    System.out.println(response.getContent());
+                                }
+                                break;
                             }
+                        }catch(Exception e){
+                            isResend = true;
                             break;
-                            }
-                    }catch(Exception e){
-                        break;
+                        }
                     }
-
 
                 }
 
