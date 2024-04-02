@@ -29,17 +29,21 @@ public class Client {
         int requestId = 1;
         int operation = 0;
         int interval = 0;
+        String userInput = String.valueOf('0');
         int currentTime;
+        String filename = null;
+        int offset = 0;
+        int bytesToReadFrom = 0;
 
 
         try {
             while (true) {
 
                 // duplicate previous request
-                randomBoolean = random.nextBoolean();
                 currentTime = (int) System.currentTimeMillis();
-                if (requestId>1 && randomBoolean){
-                    System.out.println("Testing Duplicate Requests...");
+
+                if (requestId > 1 && randomBoolean && userInput.equals("1") || userInput.equals("2") || userInput.equals("3") || userInput.equals("4") || userInput.equals("5")){
+                    System.out.println("Request timeout, sending the request again.");
                     // Send same request packet as before
                     socket.send(requestPacket);
 
@@ -47,45 +51,60 @@ public class Client {
                     responsePacket = new DatagramPacket(buffer, buffer.length);
 
                     // timeout
-                    socket.receive(responsePacket);
+                    long startTime = System.currentTimeMillis();
+                    while ((System.currentTimeMillis() - startTime) < 5000) {
+                        socket.receive(responsePacket);
 
-                    System.out.println("Received response from Server");
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                        System.out.println("Received response from Server");
+                        response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // cache read content
-                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+                        // Read the file content
+                        if (request.getOperation() == 1) {
+                            System.out.println("Content: " + readFileContent(response.getContent(), offset, bytesToReadFrom));
+                        }
+                        else{
+                            System.out.println("Content: " + response.getContent());
 
-                    cache.put(response.getContent(), entry);
+                        }
+                        // cache read content
+                        CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
-                    System.out.println("Successfully executed duplicate requests !");
+                        cache.put(filename, entry);
+
+                        System.out.println("Successfully cached file!");
+                        break;
+                    }
+//                    System.out.print("Successfully executed duplicate requests !");
                 }
+                randomBoolean = random.nextBoolean();
 
                 System.out.print("Enter request (or type 'quit' to exit): ");
-                String userInput = scanner.nextLine();
+                userInput = scanner.nextLine();
 
 
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
-                InetAddress serverAddress = InetAddress.getByName("10.91.187.225"); // Change this to the server's IP address
+                InetAddress serverAddress = InetAddress.getByName("10.91.230.147"); // Change this to the server's IP address
                 socket = new DatagramSocket();
+
+
 
 
                 if (userInput.equals("1")) {
 
                     operation = 1;
-                    System.out.println("Enter read request filename: ");
-                    String filename = scanner.nextLine();
-                    System.out.println("Enter read request offset: ");
-                    int offset = scanner.nextInt();
-                    System.out.println("Enter number of bytes to read from: ");
-                    int bytesToReadFrom = scanner.nextInt();
+                    System.out.print("Enter read request filename: ");
+                    filename = scanner.nextLine();
+                    System.out.print("Enter read request offset: ");
+                    offset = scanner.nextInt();
+                    System.out.print("Enter number of bytes to read from: ");
+                    bytesToReadFrom = scanner.nextInt();
                     scanner.nextLine();
 
                     // if file is already in cache
                     if (cache.containsKey(filename)) {
-                        System.out.println("Checking if file already cached...");
+                        System.out.print("Checking if file already cached...");
                         // cache validity check
                         if (cache.get(filename).validityCheck()){
                             System.out.println("Cached file is still valid!");
@@ -113,23 +132,30 @@ public class Client {
                             responsePacket = new DatagramPacket(buffer, buffer.length);
 
                             // timeout
-                            socket.receive(responsePacket);
+                            long startTime = System.currentTimeMillis();
+                            while ((System.currentTimeMillis() - startTime) < 5000) {
+                                if (!randomBoolean) {
 
-                            System.out.println("Received response from Server");
-                            // Unmarshal response object
-                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                                    socket.receive(responsePacket);
 
-                            int lastModifiedServer = response.getModifiedTime();
+                                    System.out.println("Received response from Server");
+                                    // Unmarshal response object
+                                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                            // if lastModified matches
-                            if (cache.get(filename).validityModifiedCheck(lastModifiedServer)){
-                                String content = cache.get(filename).getContent();
-                                System.out.println(readFileContent(content, offset, bytesToReadFrom));
-                                continue;
+                                    int lastModifiedServer = response.getModifiedTime();
+
+                                    // if lastModified matches
+                                    if (cache.get(filename).validityModifiedCheck(lastModifiedServer)) {
+                                        String content = cache.get(filename).getContent();
+                                        System.out.print(readFileContent(content, offset, bytesToReadFrom));
+                                        continue;
+                                    }
+                                    cache.remove(filename);
+                                    // Invaldiate cache entry and make a new request
+                                    System.out.println("Cache entry is invalid. Sending new request for file content.");
+                                    break;
+                                }
                             }
-                            cache.remove(filename);
-                            // Invaldiate cache entry and make a new request
-                            System.out.println("Cache entry is invalid. Sending new request for file content.");
 
                         }
 
@@ -148,34 +174,41 @@ public class Client {
                     socket.send(requestPacket);
 
                     buffer = new byte[1024];
-                     responsePacket = new DatagramPacket(buffer, buffer.length);
+                    responsePacket = new DatagramPacket(buffer, buffer.length);
 
                     // timeout
-                    socket.receive(responsePacket);
+                    long startTime = System.currentTimeMillis();
+                    while ((System.currentTimeMillis() - startTime) < 5000){
+                        if (!randomBoolean) {
+                            socket.receive(responsePacket);
 
-                    System.out.println("Received response from Server");
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                            System.out.println("Received response from Server: ");
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Read the file content
-                    System.out.println("Requested Read content: "+ readFileContent(response.getContent(), offset, bytesToReadFrom));
+                            // Read the file content
+                            System.out.println("Requested Read content: " + readFileContent(response.getContent(), offset, bytesToReadFrom));
 
-                    // cache read content
-                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+                            // cache read content
+                            CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
-                    cache.put(filename, entry);
+                            cache.put(filename, entry);
 
-                    System.out.println("Successfully cached file!");
+                            System.out.println("Successfully cached file!");
+                            break;
+                        }
+
+                    }
 
                 } else if (userInput.equals("2")) {
 
                     operation = 2;
-                    System.out.println("Enter insert request filename: ");
-                    String filename = scanner.nextLine();
-                    System.out.println("Enter insert request offset: ");
-                    int offset = scanner.nextInt();
+                    System.out.print("Enter insert request filename: ");
+                    filename = scanner.nextLine();
+                    System.out.print("Enter insert request offset: ");
+                    offset = scanner.nextInt();
                     scanner.nextLine();
-                    System.out.println("Enter content to write into file: ");
+                    System.out.print("Enter content to write into file: ");
                     String bytesToWrite = scanner.nextLine();
 
                     // Create request object
@@ -194,25 +227,31 @@ public class Client {
                      responsePacket = new DatagramPacket(buffer, buffer.length);
 
                     // timeout
-                    socket.receive(responsePacket);
+                    long startTime = System.currentTimeMillis();
+                    while ((System.currentTimeMillis() - startTime) < 5000) {
+                        if (randomBoolean) {
+                            socket.receive(responsePacket);
 
-                    System.out.println("Received response from Server");
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                            System.out.println("Received response from Server");
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Process response
-                    System.out.println("RequestId: " + response.getRequestId());
-                    System.out.println("Status" + response.getStatus());
-                    System.out.println("Modified time: " + response.getModifiedTime());
-                    System.out.println("Content: " + response.getContent());
+                            // Process response
+                            //                    System.out.print("RequestId: " + response.getRequestId());
+                            //                    System.out.print("Status" + response.getStatus());
+                            //                    System.out.print("Modified time: " + response.getModifiedTime());
+                            System.out.println("Content: " + response.getContent());
+                            break;
+                        }
+                    }
 
 
                 } else if (userInput.equals("3")) {
 
                     operation = 3;
-                    System.out.println("Enter monitor file request filename: ");
-                    String filename = scanner.nextLine();
-                    System.out.println("Enter monitor interval: ");
+                    System.out.print("Enter monitor file request filename: ");
+                    filename = scanner.nextLine();
+                    System.out.print("Enter monitor interval: ");
                     interval = scanner.nextInt();
                     scanner.nextLine();
 
@@ -245,19 +284,20 @@ public class Client {
                         }
 
                         // Set the timeout for the socket to the remaining time
-                        socket.setSoTimeout((int) remainingTime);
+                        socket.setSoTimeout((int) interval);
 
                         try{
                             // Wait for data with the remaining time as the timeout
+                            System.out.println("Monitoring Starts!");
                             socket.receive(responsePacket);
                             System.out.println("Received updates from Server!");
                             // Unmarshal response object
                             response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
                             // Process response
-                            System.out.println("RequestId: " + response.getRequestId());
-                            System.out.println("Status" + response.getStatus());
-                            System.out.println("Modified time: " + response.getModifiedTime());
+//                            System.out.println("RequestId: " + response.getRequestId());
+//                            System.out.println("Status" + response.getStatus());
+//                            System.out.println("Modified time: " + response.getModifiedTime());
                             System.out.println("Content: " + response.getContent());
 
                             // Assume that the updated file is already in cache, Update cache
@@ -269,13 +309,16 @@ public class Client {
                             System.out.println("Successfully updated "+ filename);
 
                         } catch (IOException e) {
-                            System.err.println("Waiting for data...");
+                            System.err.println("Monitoring ends!");
+                            randomBoolean = false;
+                            break;
                         }
-                    }
 
+                    }
                     // if no updates, continue to next request
                     if (response == null){
                         System.out.println("Did not receive updates from server! Proceeding to next request.");
+                        randomBoolean = false;
                         continue;
                     }
 
@@ -283,8 +326,8 @@ public class Client {
                 } else if (userInput.equals("4")) {
 
                     operation = 4;
-                    System.out.println("Enter list directory request filename: ");
-                    String filename = scanner.nextLine();
+                    System.out.print("Enter list directory request filename: ");
+                    filename = scanner.nextLine();
 
                     // Create request object
                     request = new Request(operation, filename, requestId); // Example request
@@ -304,26 +347,31 @@ public class Client {
                      responsePacket = new DatagramPacket(buffer, buffer.length);
 
                     // timeout
-                    socket.receive(responsePacket);
+                    long startTime = System.currentTimeMillis();
+                    while ((System.currentTimeMillis() - startTime) < 5000) {
+                        if (randomBoolean) {
+                            socket.receive(responsePacket);
 
-                    System.out.println("Received response from Server");
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                            System.out.println("Received response from Server");
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Process response
-                    System.out.println("RequestId: " + response.getRequestId());
-                    System.out.println("Status" + response.getStatus());
-                    System.out.println("Modified time: " + response.getModifiedTime());
-                    System.out.println("Content: " + response.getContent());
-
+                            // Process response
+//                    System.out.print("RequestId: " + response.getRequestId());
+//                    System.out.print("Status" + response.getStatus());
+//                    System.out.print("Modified time: " + response.getModifiedTime());
+                            System.out.println("Content: " + response.getContent());
+                            break;
+                        }
+                    }
                 } else if (userInput.equals("5")) {
 
                     operation = 5;
-                    System.out.println("Enter delete request filename: ");
-                    String filename = scanner.nextLine();
-                    System.out.println("Enter delete request offset: ");
-                    int offset = scanner.nextInt();
-                    System.out.println("Enter number of bytes to delete from: ");
+                    System.out.print("Enter delete request filename: ");
+                    filename = scanner.nextLine();
+                    System.out.print("Enter delete request offset: ");
+                    offset = scanner.nextInt();
+                    System.out.print("Enter number of bytes to delete from: ");
                     int bytesToDelete = scanner.nextInt();
 
                     // Create request object
@@ -342,17 +390,23 @@ public class Client {
                      responsePacket = new DatagramPacket(buffer, buffer.length);
 
                     // timeout
-                    socket.receive(responsePacket);
+                    long startTime = System.currentTimeMillis();
+                    while ((System.currentTimeMillis() - startTime) < 5000) {
+                        if (randomBoolean) {
+                            socket.receive(responsePacket);
 
-                    System.out.println("Received response from Server");
-                    // Unmarshal response object
-                    response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
+                            System.out.println("Received response from Server");
+                            // Unmarshal response object
+                            response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
 
-                    // Process response
-                    System.out.println("requestId: " + response.getRequestId());
-                    System.out.println("Status: " + response.getStatus());
-                    System.out.println("Modified time: " + response.getModifiedTime());
-                    System.out.println("Content: " + response.getContent());
+                            // Process response
+//                    System.out.print("requestId: " + response.getRequestId());
+//                    System.out.print("Status: " + response.getStatus());
+//                    System.out.print("Modified time: " + response.getModifiedTime());
+                            System.out.println("Content: " + response.getContent());
+                            break;
+                        }
+                    }
                 }
 
                 requestId++;
@@ -373,6 +427,6 @@ public class Client {
         }
 
         // Return the substring from position i to position j (inclusive)
-        return content.substring(offset, bytesToRead);
+        return content.substring(offset, offset + bytesToRead);
     }
 }

@@ -37,7 +37,6 @@ public class UnmarshallerCaller {
         Pair<Integer, String> dataPair = Unmarshaller.unmarshallString(replyBuffer, index);
         index = dataPair.getFirst();
         String content = dataPair.getSecond(); // data can be the actual data or error message to be printed or null.
-        System.out.println(content);
         Reply reply = new Reply(requestId, status, modifiedTime, content);
 
         return reply;
