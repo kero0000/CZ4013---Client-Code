@@ -68,7 +68,7 @@ public class Client {
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
-                InetAddress serverAddress = InetAddress.getByName("10.91.187.225"); // Change this to the server's IP address
+                InetAddress serverAddress = InetAddress.getByName("10.91.253.40"); // Change this to the server's IP address
                 socket = new DatagramSocket();
 
 
@@ -268,8 +268,9 @@ public class Client {
 
                             System.out.println("Successfully updated "+ filename);
 
-                        } catch (IOException e) {
+                        } catch (SocketTimeoutException e) {
                             System.err.println("Waiting for data...");
+                            break;
                         }
                     }
 
@@ -279,6 +280,7 @@ public class Client {
                         continue;
                     }
 
+                    continue;
 
                 } else if (userInput.equals("4")) {
 
