@@ -38,6 +38,19 @@ public class Client {
 
 
         try {
+            InetAddress ip = InetAddress.getLocalHost();
+            String ipAddress = ip.getHostAddress();
+            System.out.println("Your current IP address : " + ipAddress);
+            String[] octets = ipAddress.split("\\.");
+            int lastThreeOctets = Integer.parseInt(octets[1] + octets[2] + octets[3]);
+            requestId += lastThreeOctets;
+            System.out.println("Your intial Request ID : " + requestId);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
             while (true) {
 
                 // duplicate previous request
