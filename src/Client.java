@@ -27,7 +27,7 @@ public class Client {
         byte[] responseData = null;
         byte[] buffer = null;
         byte[] marshalledRequestData = null;
-        int requestId = 5000;
+        int requestId = 1;
         int operation = 0;
         int interval = 0;
         String userInput = String.valueOf('0');
@@ -43,7 +43,7 @@ public class Client {
                 // duplicate previous request
                 currentTime = (int) System.currentTimeMillis();
 
-                if (requestId > 1 && isResend && request.getOperation() >= 1 && request.getOperation() <= 5){
+                if (requestId > 1 && isResend){
                     System.out.println("Request timeout, sending the request again.");
                     // Send same request packet as before
                     socket.send(requestPacket);
@@ -112,7 +112,7 @@ public class Client {
                     }
 //                    System.out.print("Successfully executed duplicate requests !");
                 }
-                isResend = false;
+
                 System.out.print("Enter request (or type 'quit' to exit): ");
                 userInput = scanner.nextLine();
 
@@ -124,8 +124,9 @@ public class Client {
                 socket = new DatagramSocket();
 
 
-
-
+                if (userInput.equals("1") || userInput.equals("2") || userInput.equals("3") || userInput.equals("4") || userInput.equals("5")){
+                    isResend = true;
+                }
                 if (userInput.equals("1")) {
 
                     operation = 1;
