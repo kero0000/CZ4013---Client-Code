@@ -158,7 +158,7 @@ public class Client {
                         if (cache.get(filename).validityCheck()){
                             System.out.println("Cached file is still valid!");
                             String content = cache.get(filename).getContent();
-                            System.out.println("Content: " + readFileContent(content, offset, bytesToReadFrom));
+                            System.out.println("Content from cache: " + readFileContent(content, offset, bytesToReadFrom));
                             isResend = false;
                             continue;
                         }
@@ -194,6 +194,7 @@ public class Client {
                             // if lastModified matches
                             if (cache.get(filename).validityModifiedCheck(lastModifiedServer)) {
                                 String content = cache.get(filename).getContent();
+                                System.out.println("File at server not modified, reading content from cache.");
                                 System.out.println("Content from cache: " + readFileContent(content, offset, bytesToReadFrom));
                                 isResend = false;
                                 continue;
@@ -535,7 +536,7 @@ public class Client {
 
     private static String readFileContent(String content, int offset, int bytesToRead) {
         // Check if the input indices are valid
-        if (offset < 0 || bytesToRead >= content.length() || offset > bytesToRead) {
+        if (offset < 0 || bytesToRead > content.length() || offset >= content.length() || offset + bytesToRead > content.length()|| bytesToRead <= 0){
             return ""; // Return an empty string if indices are invalid
         }
 
