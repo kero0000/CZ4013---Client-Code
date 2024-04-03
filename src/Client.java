@@ -77,14 +77,20 @@ public class Client {
                         // Read the file content
                         if (request.getOperation() == 1) {
                             if (response.getStatus()==1){
-                                System.out.println("Content: " +  readFileContent(response.getContent(), offset, bytesToReadFrom));
+                                String content = cache.get(filename).getContent();
+                                String requestedContent = readFileContent(content, offset, bytesToReadFrom);
+                                if (requestedContent.startsWith("ERROR:")) {
+                                    System.out.println(requestedContent);
+                                } else {
+                                    System.out.println("Requested Read content: " + requestedContent);
+                                    cache.remove(filename);
+                                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+                                    cache.put(filename, entry);
+                                    System.out.println("Successfully cached file!");
+                                }
                                 // cache read content
-                                // cache.remove(filename);
-                                CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
 
-                                cache.put(filename, entry);
 
-                                System.out.println("Successfully cached file!");
                             }
                             else{
                                 System.out.println(response.getContent());
@@ -138,7 +144,7 @@ public class Client {
 
 
                 if (userInput.equals("1") || userInput.equals("2") || userInput.equals("3") || userInput.equals("4") || userInput.equals("5")){
-                    isResend = true;
+                    isResend = false;
                 }
                 if (userInput.equals("1")) {
 
@@ -158,7 +164,12 @@ public class Client {
                         if (cache.get(filename).validityCheck()){
                             System.out.println("Cached file is still valid!");
                             String content = cache.get(filename).getContent();
-                            System.out.println("Content from cache: " + readFileContent(content, offset, bytesToReadFrom));
+                            String requestedContent = readFileContent(content, offset, bytesToReadFrom);
+                            if (requestedContent.startsWith("ERROR:")) {
+                                System.out.println(requestedContent);
+                            } else {
+                                System.out.println("Content from cache: " + requestedContent);
+                            }
                             isResend = false;
                             continue;
                         }
@@ -195,7 +206,12 @@ public class Client {
                             if (cache.get(filename).validityModifiedCheck(lastModifiedServer)) {
                                 String content = cache.get(filename).getContent();
                                 System.out.println("File at server not modified, reading content from cache.");
-                                System.out.println("Content from cache: " + readFileContent(content, offset, bytesToReadFrom));
+                                String requestedContent = readFileContent(content, offset, bytesToReadFrom);
+                                if (requestedContent.startsWith("ERROR:")) {
+                                    System.out.println(requestedContent);
+                                } else {
+                                    System.out.println("Content from cache: " + requestedContent);
+                                }
                                 isResend = false;
                                 continue;
                             }
@@ -203,8 +219,6 @@ public class Client {
                             // Invaldiate cache entry and make a new request
                             System.out.println("Cache entry is invalid. Sending new request for file content.");
                             operation = 1;
-
-
 
                         }
 
@@ -238,14 +252,18 @@ public class Client {
                                 response = UnmarshallerCaller.unmarshallReply(responsePacket.getData());
                                 if (response.getStatus() == 1) {
                                     // Read the file content
-                                    System.out.println("Requested Read content: " + readFileContent(response.getContent(), offset, bytesToReadFrom));
-    
-                                    // cache read content
-                                    CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
-    
-                                    cache.put(filename, entry);
-    
-                                    System.out.println("Successfully cached file!");
+                                    String content = readFileContent(response.getContent(), offset, bytesToReadFrom);
+                                    if (content.startsWith("ERROR:")) {
+                                        System.out.println(content);
+                                    } else {
+                                        System.out.println("Requested Read content: " + content);
+                                        // cache read content
+                                        cache.remove(filename);
+                                        CacheEntry entry = new CacheEntry(response.getContent(), response.getModifiedTime(), currentTime);
+                                        cache.put(filename, entry);
+                                        System.out.println("Successfully cached file!");
+                                    }
+
                                 } else {
                                     System.out.println(response.getContent());
                                 }
@@ -378,7 +396,7 @@ public class Client {
 
                             if (response.getStatus()==1){
                                 // Read the file content
-                                System.out.println("Content: " + response.getContent());
+                                System.out.println("Updated Content: " + response.getContent());
 
                                 // cache read content
                                 cache.remove(filename);
@@ -449,7 +467,7 @@ public class Client {
     
                                 if (response.getStatus() == 1) {
                                     // Read the file content
-                                    System.out.println("Content: " + response.getContent());
+                                    System.out.println("Directory Content: " + response.getContent());
     
                                 } else {
                                     System.out.println(response.getContent());
@@ -537,7 +555,7 @@ public class Client {
     private static String readFileContent(String content, int offset, int bytesToRead) {
         // Check if the input indices are valid
         if (offset < 0 || bytesToRead > content.length() || offset >= content.length() || offset + bytesToRead > content.length()|| bytesToRead <= 0){
-            return ""; // Return an empty string if indices are invalid
+            return "ERROR: Invalid Offset and/or Bytes to Read"; // Return an error message
         }
 
         // Return the substring from position i to position j (inclusive)
