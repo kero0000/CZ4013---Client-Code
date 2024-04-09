@@ -44,7 +44,7 @@ public class Client {
             String[] octets = ipAddress.split("\\.");
             int lastThreeOctets = Integer.parseInt(octets[1] + octets[2] + octets[3]);
             requestId += lastThreeOctets;
-            System.out.println("Your intial Request ID : " + requestId);
+            System.out.println("Your initial Request ID : " + requestId);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -77,7 +77,7 @@ public class Client {
                         // Read the file content
                         if (request.getOperation() == 1) {
                             if (response.getStatus()==1){
-                                String content = cache.get(filename).getContent();
+                                String content = response.getContent();
                                 String requestedContent = readFileContent(content, offset, bytesToReadFrom);
                                 if (requestedContent.startsWith("ERROR:")) {
                                     System.out.println(requestedContent);
@@ -139,12 +139,12 @@ public class Client {
                 if (userInput.equalsIgnoreCase("quit")) {
                     break; // Exit loop if user types 'quit'
                 }
-                InetAddress serverAddress = InetAddress.getByName("127.0.0.1"); // Change this to the server's IP address
+                InetAddress serverAddress = InetAddress.getByName("10.91.169.141"); // Change this to the server's IP address
                 socket = new DatagramSocket();
 
 
                 if (userInput.equals("1") || userInput.equals("2") || userInput.equals("3") || userInput.equals("4") || userInput.equals("5")){
-                    isResend = false;
+                    isResend = true;
                 }
                 if (userInput.equals("1")) {
 
